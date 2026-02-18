@@ -177,7 +177,7 @@ async function main() {
   console.log('Reading gist...');
   let data = await readGist();
 
-  if (!data) {
+  if (!data || !data.checks) {
     console.log('No existing data, initializing...');
     data = {
       monitoringSince: now,
