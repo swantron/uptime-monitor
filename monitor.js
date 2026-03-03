@@ -18,14 +18,11 @@ const SERVICES = {
 async function checkService(name, { url, method }) {
   const start = Date.now();
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
     const res = await fetch(url, {
       method,
-      signal: controller.signal,
+      signal: AbortSignal.timeout(10000),
       redirect: 'follow',
     });
-    clearTimeout(timeout);
     const ms = Date.now() - start;
     const up = res.status >= 200 && res.status < 400;
     console.log(`  ${name}: ${up ? 'UP' : 'DOWN'} (${res.status}) ${ms}ms`);
@@ -55,24 +52,32 @@ async function readGist() {
   return JSON.parse(file.content);
 }
 
-async function writeGist(data) {
-  const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-    method: 'PATCH',
-    headers: {
-      Authorization: `token ${GH_PAT}`,
-      Accept: 'application/vnd.github+json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      files: {
-        [GIST_FILENAME]: {
-          content: JSON.stringify(data, null, 2),
-        },
+async function writeGist(data, retries = 2) {
+  const body = JSON.stringify({
+    files: {
+      [GIST_FILENAME]: {
+        content: JSON.stringify(data, null, 2),
       },
-    }),
+    },
   });
-  if (!res.ok) {
-    throw new Error(`Failed to write gist: ${res.status} ${await res.text()}`);
+  for (let attempt = 1; attempt <= retries + 1; attempt++) {
+    const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `token ${GH_PAT}`,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+      },
+      body,
+    });
+    if (res.ok) return;
+    const text = await res.text();
+    if (attempt <= retries && res.status >= 500) {
+      console.log(`  Write attempt ${attempt} failed (${res.status}), retrying...`);
+      await new Promise((r) => setTimeout(r, 1000 * attempt));
+      continue;
+    }
+    throw new Error(`Failed to write gist: ${res.status} ${text}`);
   }
 }
 
@@ -166,12 +171,12 @@ async function main() {
   const now = new Date().toISOString();
   console.log(`Uptime check at ${now}`);
 
-  // Check all services
+  // Check all services in parallel
   console.log('Checking services...');
-  const results = {};
-  for (const [name, config] of Object.entries(SERVICES)) {
-    results[name] = await checkService(name, config);
-  }
+  const entries = await Promise.all(
+    Object.entries(SERVICES).map(async ([name, config]) => [name, await checkService(name, config)])
+  );
+  const results = Object.fromEntries(entries);
 
   // Read existing gist data
   console.log('Reading gist...');
