@@ -1,7 +1,8 @@
 const GIST_ID = process.env.GIST_ID;
 const GH_PAT = process.env.GH_PAT;
 const GIST_FILENAME = 'uptime.json';
-const MAX_AGE_DAYS = 30;
+const MAX_AGE_DAYS = 7;
+const MAX_CHECKS = 500;
 
 const SERVICES = {
   tronswan: { url: 'https://tronswan.com', method: 'HEAD' },
@@ -49,6 +50,16 @@ async function readGist() {
   if (!file) {
     return null;
   }
+  if (file.truncated) {
+    console.log('  Gist content truncated, fetching raw_url...');
+    const rawRes = await fetch(file.raw_url, {
+      headers: { Authorization: `token ${GH_PAT}` },
+    });
+    if (!rawRes.ok) {
+      throw new Error(`Failed to fetch raw gist: ${rawRes.status}`);
+    }
+    return rawRes.json();
+  }
   return JSON.parse(file.content);
 }
 
@@ -83,7 +94,8 @@ async function writeGist(data, retries = 2) {
 
 function pruneOldChecks(checks) {
   const cutoff = Date.now() - MAX_AGE_DAYS * 24 * 60 * 60 * 1000;
-  return checks.filter((c) => new Date(c.time).getTime() > cutoff);
+  const pruned = checks.filter((c) => new Date(c.time).getTime() > cutoff);
+  return pruned.length > MAX_CHECKS ? pruned.slice(-MAX_CHECKS) : pruned;
 }
 
 function computeServices(checks, currentResults) {
