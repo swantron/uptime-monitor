@@ -12,6 +12,7 @@ GitHub Actions cron job that pings services every 5 minutes and writes results t
 | ATProto PDS | https://jswan.dev/xrpc/_health | GET |
 | mt.services | https://mt.services | HEAD |
 | MLB Stats API | https://statsapi.mlb.com/api/v1/standings?leagueId=103,104 | GET |
+| wrenchtron.com | https://wrenchtron.com | HEAD |
 
 ## How It Works
 

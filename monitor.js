@@ -14,6 +14,7 @@ const SERVICES = {
     url: 'https://statsapi.mlb.com/api/v1/standings?leagueId=103,104',
     method: 'GET',
   },
+  wrenchtron: { url: 'https://wrenchtron.com', method: 'HEAD' },
 };
 
 async function checkService(name, { url, method }) {
