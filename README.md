@@ -21,7 +21,7 @@ GitHub Actions cron job that pings services every 5 minutes and writes results t
 1. `monitor.js` pings each service and records status + response time
 2. Reads existing data from the Gist, appends the new check
 3. Computes uptime percentages and tracks incidents (up/down transitions)
-4. Prunes data older than 30 days
+4. Prunes data older than 7 days (and caps at 500 checks)
 5. Writes updated JSON back to the Gist
 
 The [tronswan.com/status](https://tronswan.com/status) page fetches the Gist for real uptime data.

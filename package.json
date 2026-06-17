@@ -1,8 +1,18 @@
 {
   "name": "uptime-monitor",
   "version": "1.0.0",
-  "type": "module",
   "private": true,
+  "type": "module",
+  "description": "Continuous heartbeat for the swantron fleet: a GitHub Actions cron that pings each service every 5 minutes and tracks uptime % and incidents in a public Gist. Zero dependencies, zero infrastructure.",
+  "license": "MIT",
+  "author": "Joe Swanson <joe@swantron.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/swantron/uptime-monitor.git"
+  },
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "monitor": "node monitor.js"
   }
